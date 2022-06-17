@@ -1,0 +1,160 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <pthread.h>
+#include <conio.h>
+#include <stdbool.h>
+
+/*#define ledRed     "\x1b[31m"
+#define ledGreen   "\x1b[32m"
+#define ledYellow  "\x1b[33m"
+#define ledColorReset   "\x1b[0m"
+// printf(ledRed     "RED"     ledColorReset "\n");*/
+
+#define nbrThreads 5
+
+enum trafLightState { trafRed, trafYellow1, trafGreen, trafYellow2};
+
+enum trafLightState tState = trafRed;
+
+enum pedLightState {pedRed, pedGreen};
+
+enum pedLightState pState =pedRed;
+
+bool pressedButton;
+
+void pedButton ()
+{
+    int answer;
+    printf(" Do you want to cross the street \n\n please press for \t yes 1 \t or \t no 0 \n");
+    scanf("%d", &answer);
+     if (answer == 1)
+     {
+         pressedButton = true;
+     }
+     else
+     {
+         pressedButton = false;
+     }
+}
+void* turnOnTrafficLed ( void* arg)
+{
+    switch (tState)
+    {
+        case trafRed:
+            printf("RED = 1 \n");
+            printf ("YELLOW =0 \n");
+            printf ("GREEN =0\n\n");
+            usleep(2000000); //wait 2 sec
+            // maybe display ped leds here too
+
+            tState = trafYellow1;
+        break;
+
+       case trafYellow1:
+
+            printf("RED =0 \n");
+            printf ("YELLOW =1\n");
+            printf ("GREEN =0 \n\n");
+            usleep(2000000); //wait 2 sec
+
+            tState = trafGreen;
+
+        break;
+
+		case trafGreen:
+
+            printf("RED =0\n");
+            printf ("YELLOW =0 \n");
+            printf ("GREEN =1\n\n");
+            usleep(2000000); //wait 2 sec
+            tState = trafYellow2;
+
+        break;
+
+      case trafYellow2:
+
+            printf("RED =0 \n");
+            printf ("YELLOW =1 \n");
+            printf ("GREEN =0\n\n");
+            usleep(2000000);
+
+            tState = trafRed;
+
+        break;
+
+       default:
+        break;
+
+
+    }
+}
+void* turnOnPedLed ( void* arg)
+{
+    switch (pState)
+    {
+        case pedRed:
+
+            printf("P_RED =1 \n");
+            printf ("P_GREEN =0\n");
+            usleep(2000000); //wait 2 sec
+            // maybe display ped leds here too
+
+            pState = pedGreen;
+        break;
+
+        case pedGreen:
+
+            printf("P_RED =0 \n");
+             printf ("P_GREEN =1 \n");
+            usleep(2000000); //wait 2 sec
+            // maybe display ped leds here too
+
+            pState = pedRed;
+        break;
+
+        default:
+        break;
+    }
+}
+
+int main(void)
+{
+   // pedButton();// to let the prog woks in loop
+    pthread_t trafficLight, pedestrianLight; // declaration
+
+    for (;;)
+    {
+    pedButton();
+    if(pressedButton == true)
+        {
+            tState = trafRed;
+            pState = pedGreen;
+
+
+        }
+
+    else
+        {
+
+            if ( tState == trafGreen)
+            {
+                pState = pedRed;
+            }
+
+           /*tState = trafRed;
+           pState = pedRed;*/
+
+
+        }
+
+            pthread_create(&trafficLight, NULL, turnOnTrafficLed, (void*) NULL);
+            pthread_create(&pedestrianLight, NULL, turnOnPedLed, (void*) NULL);
+            pthread_join(trafficLight, NULL);
+            pthread_join(pedestrianLight, NULL);
+            printf("\n\n -------------------------- \n\n");
+    }
+
+
+    return 0;
+}
